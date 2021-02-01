@@ -1,3 +1,13 @@
+extern crate iron;
+
+use iron::prelude::*;
+use iron::status;
+
 fn main() {
-    println!("Hello, world!");
+    fn hello_world(_: &mut Request) -> IronResult<Response> {
+        Ok(Response::with((status::Ok, "Hello World!")))
+    }
+
+    let _server = Iron::new(hello_world).http("0.0.0.0:8080").unwrap();
+    println!("On 8080");
 }
