@@ -19,7 +19,7 @@ async fn echo(req_body: String) -> impl Responder {
 
 async fn manual_hello() -> impl Responder {
     HttpResponse::Ok().json(MyObj {
-        name: "John Doe".to_string(),
+        name: "John Doe 2".to_string(),
     })
 }
 
