@@ -26,7 +26,15 @@ async fn manual_hello() -> impl Responder {
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
     HttpServer::new(|| {
+        let cors = Cors::default()
+            .allowed_origin("https://www.catchts.com/")
+            .allowed_methods(vec!["GET"])
+            .allowed_headers(vec![http::header::AUTHORIZATION, http::header::ACCEPT])
+            .allowed_header(http::header::CONTENT_TYPE)
+            .max_age(3600);
+
         App::new()
+            .wrap(cors)
             .service(hello)
             .service(echo)
             .route("/hey", web::get().to(manual_hello))
