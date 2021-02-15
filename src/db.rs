@@ -1,4 +1,5 @@
-use mysql_async::prelude::*;
+use mysql::prelude::*;
+use mysql::*;
 use serde::{Deserialize, Serialize};
 use std::error::Error;
 
@@ -6,7 +7,7 @@ use std::str;
 
 pub struct Client;
 
-const database_url:&str = "mysql://uovdcifhncev7fxi:Wjm2xWWw884lOhjYl7jL@bwxhllqvglwprogbjyd4-mysql.services.clever-cloud.com:3306/bwxhllqvglwprogbjyd4";
+const database_url:&str = "mysql://ui90ojdqwe2putyy:lPsYs92Zv5qkq6DadOkh@bwbxydstxe38hgbifqya-mysql.services.clever-cloud.com:3306/bwbxydstxe38hgbifqya";
 
 #[derive(Debug, PartialEq, Eq, Clone, Serialize, Deserialize)]
 pub struct Payment {
@@ -15,90 +16,71 @@ pub struct Payment {
     pub account_name: Option<String>,
 }
 
+fn drop<T>(arg: T) {}
+
+// CREATE TABLE Persons (
+//     Personid int NOT NULL AUTO_INCREMENT,
+//     LastName varchar(255) NOT NULL,
+//     FirstName varchar(255),
+//     Age int,
+//     PRIMARY KEY (Personid)
+// );
+const CREATE: &str = r"CREATE TABLE Likes (
+    id int NOT NULL AUTO_INCREMENT,
+    article_id int,
+    count int,
+    PRIMARY KEY (id)
+);";
+
+#[derive(Serialize, Deserialize, Debug)]
+pub struct Like {
+    pub id: i32,
+    pub article_id: i32,
+    pub count: i32,
+}
+
 impl Client {
-    pub async fn new() -> std::result::Result<Vec<Payment>, mysql_async::Error> {
-        let payments = vec![
-            Payment {
-                customer_id: 1,
-                amount: 2,
-                account_name: None,
-            },
-            Payment {
-                customer_id: 3,
-                amount: 4,
-                account_name: Some("foo".into()),
-            },
-            Payment {
-                customer_id: 5,
-                amount: 6,
-                account_name: None,
-            },
-            Payment {
-                customer_id: 7,
-                amount: 8,
-                account_name: None,
-            },
-            Payment {
-                customer_id: 9,
-                amount: 10,
-                account_name: Some("bar".into()),
-            },
-        ];
+    pub async fn insert(article_id: i32) -> Result<()> {
+        let pool = Pool::new_manual(0, 1, database_url)?;
 
-        let pool = mysql_async::Pool::new(database_url);
-        let mut conn = pool.get_conn().await?;
+        let mut connection = pool.get_conn().expect("Error get_conn");
 
-        // // Create temporary table
-        // conn.query_drop(
-        //     r"CREATE TABLE payment (
-        //         customer_id int not null,
-        //         amount int not null,
-        //         account_name text
-        //     )",
-        // )
-        // .await?;
+        connection.exec_drop(
+            r"INSERT INTO Likes (article_id, count) VALUES (:article_id, :count)",
+            (article_id, 1),
+        )?;
 
-        // // Save payments
-        // let params = payments.clone().into_iter().map(|payment| {
-        //     params! {
-        //         "customer_id" => payment.customer_id,
-        //         "amount" => payment.amount,
-        //         "account_name" => payment.account_name,
-        //     }
-        // });
+        Ok(())
+    }
+    pub async fn update(article_id: i32, count: i32) -> Result<()> {
+        let pool = Pool::new_manual(0, 1, database_url)?;
 
-        // conn.exec_batch(
-        //     r"INSERT INTO payment (customer_id, amount, account_name)
-        //       VALUES (:customer_id, :amount, :account_name)",
-        //     params,
-        // )
-        // .await?;
+        let mut connection = pool.get_conn().expect("Error get_conn");
 
-        // Load payments from database. Type inference will work here.
+        let query = format!(
+            "UPDATE Likes SET count = {} WHERE article_id = {}",
+            count, article_id
+        );
+        connection.query_drop(query)?;
 
-        let loaded_payments = conn
-            .exec_map(
-                "SELECT customer_id, amount, account_name FROM payment",
-                (),
-                |(customer_id, amount, account_name)| Payment {
-                    customer_id,
-                    amount,
-                    account_name,
-                },
-            )
-            .await?;
+        Ok(())
+    }
 
-        // Dropped connection will go to the pool
-        conn;
+    pub async fn select(id: String) -> Result<Vec<Like>> {
+        let pool = Pool::new_manual(0, 1, database_url)?;
 
-        // Pool must be disconnected explicitly because
-        // it's an asynchronous operation.
-        pool.disconnect().await;
-        println!("payments {:?}", loaded_payments);
+        let mut connection = pool.get_conn().expect("Error get_conn");
+        let query = format!(
+            "SELECT id, article_id, count from Likes WHERE article_id='{}'",
+            id
+        );
 
-        //  assert_eq!(loaded_payments, payments);
+        let likes = connection.query_map(query, |(id, article_id, count)| Like {
+            id,
+            article_id,
+            count,
+        })?;
 
-        // the async fn returns Result, so
-        Ok(loaded_payments)
+        Ok(likes)
     }
 }
