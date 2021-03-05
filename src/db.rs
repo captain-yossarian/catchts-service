@@ -7,7 +7,7 @@ use std::str;
 
 pub struct Client;
 
-const database_url:&str = "mysql://ui90ojdqwe2putyy:lPsYs92Zv5qkq6DadOkh@bwbxydstxe38hgbifqya-mysql.services.clever-cloud.com:3306/bwbxydstxe38hgbifqya";
+const database_url:&str = "mysql://ui90ojdqwe2putyy:lPsYs92Zv5qkq6DadOkh@b4wshpjlpwfr1cbfl81o-mysql.services.clever-cloud.com:3306/b4wshpjlpwfr1cbfl81o";
 
 #[derive(Debug, PartialEq, Eq, Clone, Serialize, Deserialize)]
 pub struct Payment {
