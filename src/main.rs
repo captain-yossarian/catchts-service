@@ -96,6 +96,7 @@ async fn main() -> std::io::Result<()> {
             //  .wrap(cors)
             .service(hello)
             .service(echo)
+            .service(collect)
             .route("/like", web::get().to(handle_like))
             .route("/get-like", web::get().to(get_like))
     })
