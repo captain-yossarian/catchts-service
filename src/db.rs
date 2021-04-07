@@ -39,7 +39,29 @@ pub struct Like {
     pub count: i32,
 }
 
+#[derive(Serialize, Deserialize, Debug)]
+pub struct Collect {
+    pub realip_remote_addr: String,
+    pub remote_addr: String,
+}
+
 impl Client {
+    pub async fn collect(collect: Collect) -> Result<()> {
+        let pool = Pool::new_manual(0, 1, database_url)?;
+        let Collect {
+            realip_remote_addr,
+            remote_addr,
+        } = collect;
+
+        let mut connection = pool.get_conn().expect("Error get_conn");
+
+        connection.exec_drop(
+            r"INSERT INTO Visitors (realip_remote_addr, remote_addr) VALUES (:realip_remote_addr, :remote_addr)",
+            (realip_remote_addr, remote_addr),
+        )?;
+
+        Ok(())
+    }
     pub async fn insert(article_id: i32) -> Result<()> {
         let pool = Pool::new_manual(0, 1, database_url)?;
 

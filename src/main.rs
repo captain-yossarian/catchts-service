@@ -4,7 +4,7 @@ use actix_web::{
 };
 use serde::{Deserialize, Serialize};
 mod db;
-use db::Like;
+use db::{Collect, Like};
 
 #[derive(Serialize, Deserialize, Debug)]
 struct MyObj {
@@ -19,6 +19,23 @@ struct Params {
 #[get("/")]
 async fn hello() -> impl Responder {
     HttpResponse::Ok().body("42")
+}
+
+#[get("/collect")]
+pub async fn collect(req: HttpRequest) -> impl Responder {
+    let mut collect = Collect {
+        realip_remote_addr: "".to_string(),
+        remote_addr: "".to_string(),
+    };
+    if let Some(v) = req.connection_info().realip_remote_addr() {
+        collect.realip_remote_addr = v.to_string()
+    }
+    if let Some(v) = req.connection_info().remote_addr() {
+        collect.remote_addr = v.to_string()
+    }
+    println!("collect {:?}", req.connection_info());
+    db::Client::collect(collect).await;
+    HttpResponse::Ok()
 }
 
 #[post("/echo")]
