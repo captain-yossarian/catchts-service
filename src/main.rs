@@ -4,7 +4,9 @@ use actix_web::{
 };
 use serde::{Deserialize, Serialize};
 mod db;
+mod utils;
 use db::Like;
+use utils::parse_ip;
 
 #[derive(Serialize, Deserialize, Debug)]
 struct MyObj {
@@ -23,12 +25,12 @@ async fn hello() -> impl Responder {
 
 #[get("/collect")]
 pub async fn collect(req: HttpRequest) -> impl Responder {
-    match req.peer_addr() {
+    match parse_ip(req.connection_info().realip_remote_addr()) {
         Some(address) => match db::Client::collect(address.ip()).await {
             Ok(_) => HttpResponse::Ok().body("IP addres was inserted succesfuly"),
             Err(err) => HttpResponse::Ok().body(format!("Unable to insert ip address. {}", err)),
         },
-        None => HttpResponse::Ok().body("Unable to obtain IP address"),
+        _ => HttpResponse::Ok().body("Unable to iterate through socket address"),
     }
 }
 
