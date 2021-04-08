@@ -29,7 +29,7 @@ impl Client {
         let mut connection = pool.get_conn().expect("Error get_conn");
 
         connection.exec_drop(
-            r"INSERT INTO visitors (ip_address) VALUES (:ip_address)",
+            r"INSERT INTO Visitors (ip_address) VALUES (:ip_address)",
             (ip.to_string(),),
         )?;
 
