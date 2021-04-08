@@ -1,13 +1,13 @@
 use mysql::prelude::*;
 use mysql::*;
 use serde::{Deserialize, Serialize};
-use std::error::Error;
+use std::net::IpAddr;
 
 use std::str;
 
 pub struct Client;
 
-const database_url:&str = "mysql://ui90ojdqwe2putyy:lPsYs92Zv5qkq6DadOkh@b4wshpjlpwfr1cbfl81o-mysql.services.clever-cloud.com:3306/b4wshpjlpwfr1cbfl81o";
+const DB_URL:&str = "mysql://ui90ojdqwe2putyy:lPsYs92Zv5qkq6DadOkh@b4wshpjlpwfr1cbfl81o-mysql.services.clever-cloud.com:3306/b4wshpjlpwfr1cbfl81o";
 
 #[derive(Debug, PartialEq, Eq, Clone, Serialize, Deserialize)]
 pub struct Payment {
@@ -16,22 +16,6 @@ pub struct Payment {
     pub account_name: Option<String>,
 }
 
-fn drop<T>(arg: T) {}
-
-// CREATE TABLE Persons (
-//     Personid int NOT NULL AUTO_INCREMENT,
-//     LastName varchar(255) NOT NULL,
-//     FirstName varchar(255),
-//     Age int,
-//     PRIMARY KEY (Personid)
-// );
-const CREATE: &str = r"CREATE TABLE Likes (
-    id int NOT NULL AUTO_INCREMENT,
-    article_id int,
-    count int,
-    PRIMARY KEY (id)
-);";
-
 #[derive(Serialize, Deserialize, Debug)]
 pub struct Like {
     pub id: i32,
@@ -39,31 +23,20 @@ pub struct Like {
     pub count: i32,
 }
 
-#[derive(Serialize, Deserialize, Debug)]
-pub struct Collect {
-    pub realip_remote_addr: String,
-    pub remote_addr: String,
-}
-
 impl Client {
-    pub async fn collect(collect: Collect) -> Result<()> {
-        let pool = Pool::new_manual(0, 1, database_url)?;
-        let Collect {
-            realip_remote_addr,
-            remote_addr,
-        } = collect;
-
+    pub async fn collect(ip: IpAddr) -> Result<()> {
+        let pool = Pool::new_manual(0, 1, DB_URL)?;
         let mut connection = pool.get_conn().expect("Error get_conn");
 
         connection.exec_drop(
-            r"INSERT INTO Visitors (realip_remote_addr, remote_addr) VALUES (:realip_remote_addr, :remote_addr)",
-            (realip_remote_addr, remote_addr),
+            r"INSERT INTO visitors (ip_address) VALUES (:ip_address)",
+            (ip.to_string(),),
         )?;
 
         Ok(())
     }
     pub async fn insert(article_id: i32) -> Result<()> {
-        let pool = Pool::new_manual(0, 1, database_url)?;
+        let pool = Pool::new_manual(0, 1, DB_URL)?;
 
         let mut connection = pool.get_conn().expect("Error get_conn");
 
@@ -75,7 +48,7 @@ impl Client {
         Ok(())
     }
     pub async fn update(article_id: i32, count: i32) -> Result<()> {
-        let pool = Pool::new_manual(0, 1, database_url)?;
+        let pool = Pool::new_manual(0, 1, DB_URL)?;
 
         let mut connection = pool.get_conn().expect("Error get_conn");
 
@@ -89,7 +62,7 @@ impl Client {
     }
 
     pub async fn select(id: String) -> Result<Vec<Like>> {
-        let pool = Pool::new_manual(0, 1, database_url)?;
+        let pool = Pool::new_manual(0, 1, DB_URL)?;
 
         let mut connection = pool.get_conn().expect("Error get_conn");
         let query = format!(
