@@ -26,11 +26,7 @@ pub async fn collect(req: HttpRequest) -> impl Responder {
     match req.peer_addr() {
         Some(address) => match db::Client::collect(address.ip()).await {
             Ok(_) => HttpResponse::Ok().body("IP addres was inserted succesfuly"),
-            Err(err) => {
-                println!("Error message {}", err);
-                let error_message = format!("Unable to insert ip address. {}", err);
-                HttpResponse::Ok().body(error_message)
-            }
+            Err(err) => HttpResponse::Ok().body(format!("Unable to insert ip address. {}", err)),
         },
         None => HttpResponse::Ok().body("Unable to obtain IP address"),
     }
