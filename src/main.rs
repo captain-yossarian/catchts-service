@@ -24,9 +24,12 @@ async fn hello() -> impl Responder {
 #[get("/collect")]
 pub async fn collect(req: HttpRequest) -> impl Responder {
     if let Some(address) = req.peer_addr() {
-        db::Client::collect(address.ip()).await;
+        match db::Client::collect(address.ip()).await {
+            Ok(_) => HttpResponse::Ok().body("IP addres was inserted succesfuly"),
+            Err(_) => HttpResponse::Ok().body("Unable to insert ip address"),
+        };
     }
-    HttpResponse::Ok()
+    HttpResponse::Ok().body("Unable to obtain IP address")
 }
 
 #[post("/echo")]
