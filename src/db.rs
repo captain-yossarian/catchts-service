@@ -1,3 +1,4 @@
+use actix_web::client::{Client, Connector};
 use mysql::prelude::*;
 use mysql::*;
 use serde::{Deserialize, Serialize};
@@ -5,8 +6,25 @@ use std::net::IpAddr;
 
 use std::str;
 
-pub struct Client;
+pub struct MysqlClient;
+#[derive(Serialize, Deserialize, Debug)]
+pub struct IpResponse {
+    pub city: String,
+    pub country_name: String,
+    pub latitude: f32,
+    pub longitude: f32,
+}
 
+impl Default for IpResponse {
+    fn default() -> Self {
+        IpResponse {
+            city: "unknown".to_string(),
+            country_name: "unknown".to_string(),
+            latitude: 0.0,
+            longitude: 0.0,
+        }
+    }
+}
 const DB_URL:&str = "mysql://ui90ojdqwe2putyy:lPsYs92Zv5qkq6DadOkh@b4wshpjlpwfr1cbfl81o-mysql.services.clever-cloud.com:3306/b4wshpjlpwfr1cbfl81o";
 
 #[derive(Debug, PartialEq, Eq, Clone, Serialize, Deserialize)]
@@ -23,17 +41,31 @@ pub struct Like {
     pub count: i32,
 }
 
-impl Client {
+impl MysqlClient {
     pub async fn collect(ip: IpAddr) -> Result<()> {
+        let client = Client::default();
+        let ip_url = format!("https://ipapi.co/{}/json", ip.to_string());
+        let response = client
+            .get(ip_url)
+            .header("User-Agent", "actix-web/3.0")
+            .send()
+            .await;
+        let IpResponse {
+            city,
+            country_name,
+            latitude,
+            longitude,
+        } = match response.unwrap().json::<IpResponse>().await {
+            Ok(db_result) => db_result,
+            _ => IpResponse::default(),
+        };
         let pool = Pool::new_manual(0, 1, DB_URL)?;
         let mut connection = pool.get_conn().expect("Error get_conn");
 
         connection.exec_drop(
-            r"INSERT INTO Visitors (ip_address) VALUES (:ip_address)",
-            (ip.to_string(),),
-        )?;
-
-        Ok(())
+            r"INSERT INTO Visitors (ip_address, city, country_name, latitude, longitude) VALUES (:ip_address, :city, :country_name, :latitude, :longitude)",
+            (ip.to_string(),city,country_name,latitude,longitude),
+        )
     }
     pub async fn insert(article_id: i32) -> Result<()> {
         let pool = Pool::new_manual(0, 1, DB_URL)?;

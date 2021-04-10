@@ -26,7 +26,7 @@ async fn hello() -> impl Responder {
 #[get("/collect")]
 pub async fn collect(req: HttpRequest) -> impl Responder {
     match parse_ip(req.connection_info().realip_remote_addr()) {
-        Some(address) => match db::Client::collect(address.ip()).await {
+        Some(address) => match db::MysqlClient::collect(address.ip()).await {
             Ok(_) => HttpResponse::Ok().body("IP addres was inserted succesfuly"),
             Err(err) => HttpResponse::Ok().body(format!("Unable to insert ip address. {}", err)),
         },
@@ -50,17 +50,16 @@ fn to_int(id: &str) -> i32 {
 }
 
 async fn handle_like(web::Query(params): web::Query<Params>) -> impl Responder {
-    // let client = db::Client::insert(0, 1).await;
     let article_id = to_int(&params.id);
-    let result = db::Client::select(params.id).await;
+    let result = db::MysqlClient::select(params.id).await;
 
     match result {
         Ok(likes) => {
             if likes.is_empty() {
-                db::Client::insert(article_id).await;
+                db::MysqlClient::insert(article_id).await;
             } else {
                 let count = increment(likes.first().unwrap());
-                db::Client::update(article_id, count).await;
+                db::MysqlClient::update(article_id, count).await;
             }
             HttpResponse::Ok().json(MyObj { likes })
         }
@@ -69,7 +68,7 @@ async fn handle_like(web::Query(params): web::Query<Params>) -> impl Responder {
 }
 
 async fn get_like(web::Query(params): web::Query<Params>) -> impl Responder {
-    let result = db::Client::select(params.id).await;
+    let result = db::MysqlClient::select(params.id).await;
 
     match result {
         Ok(likes) => HttpResponse::Ok().json(MyObj { likes }),
