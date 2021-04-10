@@ -5,9 +5,9 @@ use actix_web::{
 use serde::{Deserialize, Serialize};
 mod db;
 mod utils;
+use actix_web::http::header;
 use db::Like;
 use utils::parse_ip;
-
 #[derive(Serialize, Deserialize, Debug)]
 struct MyObj {
     likes: std::vec::Vec<db::Like>,
@@ -79,7 +79,14 @@ async fn get_like(web::Query(params): web::Query<Params>) -> impl Responder {
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
     HttpServer::new(|| {
+        let cors = Cors::default()
+            .allowed_origin("https://ipapi.co/")
+            .allowed_methods(vec!["GET"])
+            .allowed_headers(vec![header::AUTHORIZATION, header::ACCEPT])
+            .allowed_header(header::CONTENT_TYPE)
+            .max_age(3600);
         App::new()
+            .wrap(cors)
             .wrap(
                 middleware::DefaultHeaders::new()
                     .header(http::header::ACCESS_CONTROL_ALLOW_ORIGIN, "*"),
