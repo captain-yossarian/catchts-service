@@ -47,9 +47,10 @@ impl MysqlClient {
         let ip_url = format!("https://ipapi.co/{}/json", ip.to_string());
         let response = client
             .get(ip_url)
-            .header("User-Agent", "actix-web/3.0")
+            //.header("User-Agent", "actix-web/3.0")
             .send()
             .await;
+
         let IpResponse {
             city,
             country_name,
