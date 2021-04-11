@@ -23,6 +23,7 @@ async fn hello() -> impl Responder {
     HttpResponse::Ok().body("42")
 }
 
+#[get("/collect")]
 pub async fn collect(req: HttpRequest) -> impl Responder {
     match parse_ip(req.connection_info().realip_remote_addr()) {
         Some(address) => match db::MysqlClient::collect(address.ip()).await {
@@ -80,7 +81,6 @@ async fn get_like(web::Query(params): web::Query<Params>) -> impl Responder {
 async fn main() -> std::io::Result<()> {
     HttpServer::new(|| {
         App::new()
-            //  .wrap(cors)
             .wrap(
                 middleware::DefaultHeaders::new()
                     .header(http::header::ACCESS_CONTROL_ALLOW_ORIGIN, "*"),
@@ -89,13 +89,11 @@ async fn main() -> std::io::Result<()> {
                 middleware::DefaultHeaders::new()
                     .header(http::header::ACCESS_CONTROL_ALLOW_CREDENTIALS, "true"),
             )
-            //  .wrap(cors)
             .service(hello)
             .service(echo)
-            //  .service(collect)
+            .service(collect)
             .route("/like", web::get().to(handle_like))
             .route("/get-like", web::get().to(get_like))
-            .route("/collect", web::get().to(collect))
     })
     .bind("0.0.0.0:8080")?
     .run()

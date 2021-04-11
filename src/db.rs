@@ -55,9 +55,6 @@ impl MysqlClient {
         let ip_url = format!("https://ipapi.co/{}/json", ip.to_string());
         let response = client
             .get(ip_url)
-            .header(http::header::ACCESS_CONTROL_ALLOW_METHODS, "GET")
-            .header(http::header::ACCESS_CONTROL_ALLOW_ORIGIN, "*")
-            .header(http::header::ACCESS_CONTROL_ALLOW_CREDENTIALS, "true")
             .header("User-Agent", "actix-web/3.0")
             .send()
             .await;
@@ -69,11 +66,7 @@ impl MysqlClient {
             longitude,
         } = match response.unwrap().json::<IpResponse>().await {
             Ok(db_result) => db_result,
-            Err(err) => {
-                println!("Error {}", err);
-
-                IpResponse::default()
-            }
+            Err(err) => IpResponse::default(),
         };
         let pool = Pool::new_manual(0, 1, DB_URL)?;
         let mut connection = pool.get_conn().expect("Error get_conn");
