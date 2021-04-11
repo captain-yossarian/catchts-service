@@ -1,11 +1,9 @@
-use actix_cors::Cors;
 use actix_web::{
     get, http, middleware, post, web, App, HttpRequest, HttpResponse, HttpServer, Responder,
 };
 use serde::{Deserialize, Serialize};
 mod db;
 mod utils;
-use actix_web::http::header;
 use db::Like;
 use utils::parse_ip;
 #[derive(Serialize, Deserialize, Debug)]
@@ -32,7 +30,6 @@ pub async fn collect(req: HttpRequest) -> impl Responder {
         },
         _ => HttpResponse::Ok().body("Unable to iterate through socket address"),
     }
-    //  HttpResponse::Ok().body("test")
 }
 
 #[post("/echo")]

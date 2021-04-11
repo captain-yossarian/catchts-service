@@ -1,7 +1,5 @@
-use actix_web::client::{Client, Connector};
-use actix_web::{
-    get, http, middleware, post, web, App, HttpRequest, HttpResponse, HttpServer, Responder,
-};
+use actix_web::client::Client;
+
 use mysql::prelude::*;
 use mysql::*;
 use serde::{Deserialize, Serialize};
@@ -43,12 +41,6 @@ pub struct Like {
     pub count: i32,
 }
 
-/**
-*     res.adjoin_raw_header("Access-Control-Allow-Methods", "POST, GET, OPTIONS");
-   res.adjoin_raw_header("Access-Control-Allow-Origin", "*");
-   res.adjoin_raw_header("Access-Control-Allow-Credentials", "true");
-   res.adjoin_raw_header("Access-Control-Allow-Headers", "Content-Type");
-   */
 impl MysqlClient {
     pub async fn collect(ip: IpAddr) -> Result<()> {
         let client = Client::default();
@@ -66,7 +58,7 @@ impl MysqlClient {
             longitude,
         } = match response.unwrap().json::<IpResponse>().await {
             Ok(db_result) => db_result,
-            Err(err) => IpResponse::default(),
+            Err(_) => IpResponse::default(),
         };
         let pool = Pool::new_manual(0, 1, DB_URL)?;
         let mut connection = pool.get_conn().expect("Error get_conn");
