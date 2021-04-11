@@ -24,13 +24,14 @@ async fn hello() -> impl Responder {
 }
 
 pub async fn collect(req: HttpRequest) -> impl Responder {
-    match parse_ip(req.connection_info().realip_remote_addr()) {
-        Some(address) => match db::MysqlClient::collect(address.ip()).await {
-            Ok(_) => HttpResponse::Ok().body("IP addres was inserted succesfuly"),
-            Err(err) => HttpResponse::Ok().body(format!("Unable to insert ip address. {}", err)),
-        },
-        _ => HttpResponse::Ok().body("Unable to iterate through socket address"),
-    }
+    // match parse_ip(req.connection_info().realip_remote_addr()) {
+    //     Some(address) => match db::MysqlClient::collect(address.ip()).await {
+    //         Ok(_) => HttpResponse::Ok().body("IP addres was inserted succesfuly"),
+    //         Err(err) => HttpResponse::Ok().body(format!("Unable to insert ip address. {}", err)),
+    //     },
+    //     _ => HttpResponse::Ok().body("Unable to iterate through socket address"),
+    // }
+    HttpResponse::Ok().body("test")
 }
 
 #[post("/echo")]
