@@ -49,8 +49,8 @@ impl MysqlClient {
         let ip_url = format!("https://ipapi.co/{}/json", ip.to_string());
         let response = client
             .get(ip_url)
-            .header(http::header::ACCESS_CONTROL_ALLOW_ORIGIN, "true")
-            //.header("User-Agent", "actix-web/3.0")
+            //  .header(http::header::ACCESS_CONTROL_ALLOW_ORIGIN, "true")
+            .header("User-Agent", "actix-web/3.0")
             .send()
             .await;
 
