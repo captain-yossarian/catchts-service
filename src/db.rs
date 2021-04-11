@@ -69,7 +69,11 @@ impl MysqlClient {
             longitude,
         } = match response.unwrap().json::<IpResponse>().await {
             Ok(db_result) => db_result,
-            _ => IpResponse::default(),
+            Err(err) => {
+                println!("Error {}", err);
+
+                IpResponse::default()
+            }
         };
         let pool = Pool::new_manual(0, 1, DB_URL)?;
         let mut connection = pool.get_conn().expect("Error get_conn");
