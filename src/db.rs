@@ -1,9 +1,11 @@
 use actix_web::client::{Client, Connector};
+use actix_web::{
+    get, http, middleware, post, web, App, HttpRequest, HttpResponse, HttpServer, Responder,
+};
 use mysql::prelude::*;
 use mysql::*;
 use serde::{Deserialize, Serialize};
 use std::net::IpAddr;
-
 use std::str;
 
 pub struct MysqlClient;
@@ -47,6 +49,7 @@ impl MysqlClient {
         let ip_url = format!("https://ipapi.co/{}/json", ip.to_string());
         let response = client
             .get(ip_url)
+            .header(http::header::ACCESS_CONTROL_ALLOW_ORIGIN, "true")
             //.header("User-Agent", "actix-web/3.0")
             .send()
             .await;
