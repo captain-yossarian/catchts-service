@@ -43,13 +43,21 @@ pub struct Like {
     pub count: i32,
 }
 
+/**
+*     res.adjoin_raw_header("Access-Control-Allow-Methods", "POST, GET, OPTIONS");
+   res.adjoin_raw_header("Access-Control-Allow-Origin", "*");
+   res.adjoin_raw_header("Access-Control-Allow-Credentials", "true");
+   res.adjoin_raw_header("Access-Control-Allow-Headers", "Content-Type");
+   */
 impl MysqlClient {
     pub async fn collect(ip: IpAddr) -> Result<()> {
         let client = Client::default();
         let ip_url = format!("https://ipapi.co/{}/json", ip.to_string());
         let response = client
             .get(ip_url)
-            //  .header(http::header::ACCESS_CONTROL_ALLOW_ORIGIN, "true")
+            .header(http::header::ACCESS_CONTROL_ALLOW_METHODS, "GET")
+            .header(http::header::ACCESS_CONTROL_ALLOW_ORIGIN, "*")
+            .header(http::header::ACCESS_CONTROL_ALLOW_CREDENTIALS, "true")
             .header("User-Agent", "actix-web/3.0")
             .send()
             .await;
