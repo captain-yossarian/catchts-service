@@ -23,7 +23,6 @@ async fn hello() -> impl Responder {
     HttpResponse::Ok().body("42")
 }
 
-#[get("/collect")]
 pub async fn collect(req: HttpRequest) -> impl Responder {
     match parse_ip(req.connection_info().realip_remote_addr()) {
         Some(address) => match db::MysqlClient::collect(address.ip()).await {
@@ -94,9 +93,10 @@ async fn main() -> std::io::Result<()> {
             //  .wrap(cors)
             .service(hello)
             .service(echo)
-            .service(collect)
+            //  .service(collect)
             .route("/like", web::get().to(handle_like))
             .route("/get-like", web::get().to(get_like))
+            .route("/collect", web::get().to(collect))
     })
     .bind("0.0.0.0:8080")?
     .run()
