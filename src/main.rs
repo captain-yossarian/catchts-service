@@ -78,10 +78,10 @@ async fn get_like(web::Query(params): web::Query<Params>) -> impl Responder {
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
     HttpServer::new(|| {
-        //  let cors = Cors::default().allow_any_header().allow_any_origin();
+        let cors = Cors::default().allow_any_header().allow_any_origin();
 
         App::new()
-            //.wrap(cors)
+            .wrap(cors)
             .wrap(
                 middleware::DefaultHeaders::new()
                     .header(http::header::ACCESS_CONTROL_ALLOW_ORIGIN, "*"),
