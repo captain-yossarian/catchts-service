@@ -78,7 +78,13 @@ async fn get_like(web::Query(params): web::Query<Params>) -> impl Responder {
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
     HttpServer::new(|| {
-        let cors = Cors::default().allow_any_header().allow_any_origin();
+        let cors = Cors::default()
+            .allowed_origin("https://ipapi.co")
+            .allowed_methods(vec!["GET"])
+            .allowed_headers(vec![header::AUTHORIZATION, header::ACCEPT])
+            .allowed_header(header::CONTENT_TYPE)
+            .supports_credentials()
+            .max_age(3600);
 
         App::new()
             .wrap(cors)
