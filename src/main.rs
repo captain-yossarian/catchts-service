@@ -105,6 +105,7 @@ async fn main() -> std::io::Result<()> {
             .service(hello)
             .service(echo)
             .service(session)
+            .service(collect)
             .route("/like", web::get().to(handle_like))
             .route("/get-like", web::get().to(get_like))
     })
