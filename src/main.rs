@@ -43,11 +43,11 @@ pub async fn session(req: HttpRequest) -> impl Responder {
     }
 }
 
-#[get("/metrics")]
-pub async fn metrics() -> impl Responder {
-    match db::MysqlClient::metrics().await {
-        Ok(val) => HttpResponse::Ok().json(val),
-        _ => HttpResponse::Ok().json(()),
+#[get("/metrics/{name}")]
+pub async fn metrics(web::Path(select_by): web::Path<String>) -> impl Responder {
+    match db::MysqlClient::metrics(select_by).await {
+        Ok(val) => HttpResponse::Ok().body(val),
+        _ => HttpResponse::Ok().body(""),
     }
 }
 

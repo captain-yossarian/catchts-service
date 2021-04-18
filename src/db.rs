@@ -81,6 +81,12 @@ fn map_ip_address(
     }
 }
 
+#[derive(Serialize, Deserialize, Debug)]
+struct DistinctPerDay {
+    date: String,
+    distinct_ips: i32,
+}
+
 impl MysqlClient {
     pub async fn collect(data: Data) -> Result<()> {
         let Data {
@@ -167,10 +173,30 @@ impl MysqlClient {
 
         Ok(likes)
     }
-    pub async fn metrics() -> Result<Vec<TableRow>> {
+
+    pub async fn metrics(select_by: String) -> Result<String> {
+        let data = match &select_by[..] {
+            "distinct_per_day" => {
+                let query = r"SELECT  DATE(created_at) Date, COUNT(DISTINCT ip_address) distinct_ips
+                            FROM    visitors
+                            GROUP   BY  DATE(created_at)";
+                let pool = Pool::new_manual(0, 1, DB_URL)?;
+                let mut connection = pool.get_conn().expect("Error get_conn");
+                let result = connection.query_map(query, |(date, distinct_ips): (String, i32)| {
+                    DistinctPerDay { date, distinct_ips }
+                });
+
+                match result {
+                    Ok(val) => match serde_json::to_string(&val) {
+                        Ok(v) => v,
+                        Err(_) => String::from("{}"),
+                    },
+                    Err(_) => String::from("{}"),
+                }
+            }
+            _ => String::from("{}"),
+        };
+        Ok(data)
         //https://ipapi.co/api/?shell#introduction
-        let pool = Pool::new_manual(0, 1, DB_URL)?;
-        let mut connection = pool.get_conn().expect("Error get_conn");
-        connection.query_map("SELECT * FROM visitors", map_ip_address)
     }
 }
