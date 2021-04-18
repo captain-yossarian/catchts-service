@@ -19,11 +19,6 @@ struct Params {
     id: String,
 }
 
-#[get("/")]
-async fn hello() -> impl Responder {
-    HttpResponse::Ok().body("42")
-}
-
 #[post("/collect")]
 pub async fn collect(req_body: String) -> impl Responder {
     let data: Result<Data> = serde_json::from_str(&req_body);
@@ -48,9 +43,12 @@ pub async fn session(req: HttpRequest) -> impl Responder {
     }
 }
 
-#[post("/echo")]
-async fn echo(req_body: String) -> impl Responder {
-    HttpResponse::Ok().body(req_body)
+#[get("/metrics")]
+pub async fn metrics() -> impl Responder {
+    match db::MysqlClient::metrics().await {
+        Ok(val) => HttpResponse::Ok().json(val),
+        _ => HttpResponse::Ok().json(()),
+    }
 }
 
 fn increment(like: &Like) -> i32 {
@@ -102,10 +100,9 @@ async fn main() -> std::io::Result<()> {
                 middleware::DefaultHeaders::new()
                     .header(http::header::ACCESS_CONTROL_ALLOW_CREDENTIALS, "true"),
             )
-            .service(hello)
-            .service(echo)
             .service(session)
             .service(collect)
+            .service(metrics)
             .route("/like", web::get().to(handle_like))
             .route("/get-like", web::get().to(get_like))
     })

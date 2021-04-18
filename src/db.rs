@@ -6,12 +6,9 @@ use serde::{Deserialize, Serialize};
 use std::net::IpAddr;
 use std::str;
 
-pub type Point = [f32; 2];
-
 #[derive(Serialize, Deserialize, Debug)]
 pub struct Data {
     pub pathname: String,
-    pub points: Vec<Point>,
     pub session: i32,
 }
 
@@ -48,6 +45,40 @@ pub struct Like {
     pub id: i32,
     pub article_id: i32,
     pub count: i32,
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+pub struct TableRow {
+    id: String,
+    ip_address: String,
+    created_at: String,
+    city: Option<String>,
+    country_name: Option<String>,
+    latitude: Option<f32>,
+    longitude: Option<f32>,
+}
+
+type TableRowRespone = (
+    String,
+    String,
+    String,
+    Option<String>,
+    Option<String>,
+    Option<f32>,
+    Option<f32>,
+);
+fn map_ip_address(
+    (id, ip_address, created_at, city, country_name, latitude, longitude): TableRowRespone,
+) -> TableRow {
+    TableRow {
+        id,
+        ip_address,
+        created_at,
+        city,
+        country_name,
+        latitude,
+        longitude,
+    }
 }
 
 impl MysqlClient {
@@ -135,5 +166,11 @@ impl MysqlClient {
         })?;
 
         Ok(likes)
+    }
+    pub async fn metrics() -> Result<Vec<TableRow>> {
+        //https://ipapi.co/api/?shell#introduction
+        let pool = Pool::new_manual(0, 1, DB_URL)?;
+        let mut connection = pool.get_conn().expect("Error get_conn");
+        connection.query_map("SELECT * FROM visitors", map_ip_address)
     }
 }
