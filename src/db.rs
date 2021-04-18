@@ -6,6 +6,15 @@ use serde::{Deserialize, Serialize};
 use std::net::IpAddr;
 use std::str;
 
+pub type Point = [f32; 2];
+
+#[derive(Serialize, Deserialize, Debug)]
+pub struct Data {
+    pub pathname: String,
+    pub points: Vec<Point>,
+    pub session: i32,
+}
+
 pub struct MysqlClient;
 #[derive(Serialize, Deserialize, Debug)]
 pub struct IpResponse {
@@ -42,7 +51,19 @@ pub struct Like {
 }
 
 impl MysqlClient {
-    pub async fn collect(ip: IpAddr) -> Result<()> {
+    pub async fn collect(data: Data) -> Result<()> {
+        let Data {
+            session, pathname, ..
+        } = data;
+        let pool = Pool::new_manual(0, 1, DB_URL)?;
+        let mut connection = pool.get_conn().expect("Unable to connect to database");
+
+        connection.exec_drop(
+            r"INSERT INTO session (visitor_id, pathname) VALUES (:visitor_id, :pathname)",
+            (session.to_string(), pathname),
+        )
+    }
+    pub async fn session(ip: IpAddr) -> Result<u64> {
         let client = Client::default();
         let ip_url = format!("https://ipapi.co/{}/json", ip.to_string());
         let response = client
@@ -63,10 +84,14 @@ impl MysqlClient {
         let pool = Pool::new_manual(0, 1, DB_URL)?;
         let mut connection = pool.get_conn().expect("Error get_conn");
 
-        connection.exec_drop(
-            r"INSERT INTO Visitors (ip_address, city, country_name, latitude, longitude) VALUES (:ip_address, :city, :country_name, :latitude, :longitude)",
+        let insert  = connection.exec_drop(
+            r"INSERT INTO visitors (ip_address, city, country_name, latitude, longitude) VALUES (:ip_address, :city, :country_name, :latitude, :longitude)",
             (ip.to_string(),city,country_name,latitude,longitude),
-        )
+        );
+        match insert {
+            Ok(_) => Ok(connection.last_insert_id()),
+            Err(err) => Err(err),
+        }
     }
     pub async fn insert(article_id: i32) -> Result<()> {
         let pool = Pool::new_manual(0, 1, DB_URL)?;
@@ -74,7 +99,7 @@ impl MysqlClient {
         let mut connection = pool.get_conn().expect("Error get_conn");
 
         connection.exec_drop(
-            r"INSERT INTO Likes (article_id, count) VALUES (:article_id, :count)",
+            r"INSERT INTO likes (article_id, count) VALUES (:article_id, :count)",
             (article_id, 1),
         )?;
 

@@ -2,10 +2,13 @@ use actix_web::{
     get, http, middleware, post, web, App, HttpRequest, HttpResponse, HttpServer, Responder,
 };
 use serde::{Deserialize, Serialize};
+use serde_json::Result;
+
 mod db;
 mod utils;
-use db::Like;
+use db::{Data, Like};
 use utils::parse_ip;
+
 #[derive(Serialize, Deserialize, Debug)]
 struct MyObj {
     likes: std::vec::Vec<db::Like>,
@@ -21,11 +24,24 @@ async fn hello() -> impl Responder {
     HttpResponse::Ok().body("42")
 }
 
-#[get("/collect")]
-pub async fn collect(req: HttpRequest) -> impl Responder {
+#[post("/collect")]
+pub async fn collect(req_body: String) -> impl Responder {
+    let data: Result<Data> = serde_json::from_str(&req_body);
+    match data {
+        Ok(val) => match db::MysqlClient::collect(val).await {
+            Ok(_) => println!("inserted"),
+            Err(err) => println!("Error {}", err),
+        },
+        Err(err) => println!("Error {}", err),
+    };
+    HttpResponse::Ok().body("Unable to iterate through socket address")
+}
+
+#[get("/session")]
+pub async fn session(req: HttpRequest) -> impl Responder {
     match parse_ip(req.connection_info().realip_remote_addr()) {
-        Some(address) => match db::MysqlClient::collect(address.ip()).await {
-            Ok(_) => HttpResponse::Ok().body("IP addres was inserted succesfuly"),
+        Some(address) => match db::MysqlClient::session(address.ip()).await {
+            Ok(last_inserted_id) => HttpResponse::Ok().body(last_inserted_id.to_string()),
             Err(err) => HttpResponse::Ok().body(format!("Unable to insert ip address. {}", err)),
         },
         _ => HttpResponse::Ok().body("Unable to iterate through socket address"),
@@ -88,7 +104,7 @@ async fn main() -> std::io::Result<()> {
             )
             .service(hello)
             .service(echo)
-            .service(collect)
+            .service(session)
             .route("/like", web::get().to(handle_like))
             .route("/get-like", web::get().to(get_like))
     })
