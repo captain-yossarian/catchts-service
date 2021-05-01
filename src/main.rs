@@ -24,12 +24,19 @@ pub async fn collect(req_body: String) -> impl Responder {
     let data: Result<Data> = serde_json::from_str(&req_body);
     match data {
         Ok(val) => match db::MysqlClient::collect(val).await {
-            Ok(_) => println!("inserted"),
-            Err(err) => println!("Error {}", err),
+            Ok(_) => return HttpResponse::Ok().body("Success"),
+            Err(err) => {
+                return HttpResponse::Ok().body(format!(
+                    "Unable to insert data into the table. Error: {}",
+                    err
+                ))
+            }
         },
-        Err(err) => println!("Error {}", err),
+        Err(err) => {
+            return HttpResponse::Ok()
+                .body(format!("Unable to convert body to JSON. Error: {}", err))
+        }
     };
-    HttpResponse::Ok().body("Unable to iterate through socket address")
 }
 
 #[get("/session")]
@@ -37,7 +44,7 @@ pub async fn session(req: HttpRequest) -> impl Responder {
     match parse_ip(req.connection_info().realip_remote_addr()) {
         Some(address) => match db::MysqlClient::session(address.ip()).await {
             Ok(last_inserted_id) => HttpResponse::Ok().body(last_inserted_id.to_string()),
-            Err(err) => HttpResponse::Ok().body(format!("Unable to insert ip address. {}", err)),
+            Err(err) => HttpResponse::Ok().body(format!("MYSQL error. {}", err)),
         },
         _ => HttpResponse::Ok().body("Unable to iterate through socket address"),
     }
